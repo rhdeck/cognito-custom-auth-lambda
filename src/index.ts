@@ -1,6 +1,6 @@
-import makeGoogle from "./Google";
-import makeApple from "./Apple";
+import Google from "./Google";
+import Apple from "./Apple";
 import makeHandlers from "./makeHandlers";
-import makePhone from "./Phone";
+import Phone from "./Phone";
 export default makeHandlers;
-export { makeGoogle, makeApple, makePhone, makeHandlers };
+export { Google, Apple, Phone, makeHandlers };
