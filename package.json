@@ -54,5 +54,8 @@
       "dist/*",
       "package.tgz"
     ]
-  }
+  },
+  "files": [
+    "dist/"
+  ]
 }
