@@ -1,0 +1,58 @@
+{
+  "name": "cognito-custom-auth-lambda",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c -m",
+    "prepare": "install-peers"
+  },
+  "keywords": [],
+  "types": "./dist/types",
+  "author": "Ray Deck",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/runtime": "^7.10.2",
+    "@raydeck/passcode": "^1.0.2",
+    "aws-sdk": "^2.694.0",
+    "google-auth-library": "^6.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "jwks-rsa": "^1.8.0",
+    "jwt-decode": "^2.2.0",
+    "ms": "^2.1.2",
+    "twilio": "^3.46.0",
+    "uuid": "^8.1.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.1",
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-proposal-class-properties": "^7.10.1",
+    "@babel/plugin-transform-runtime": "^7.10.1",
+    "@babel/preset-env": "^7.10.2",
+    "@babel/preset-react": "^7.10.1",
+    "@raydeck/livelink": "^1.3.3",
+    "@rollup/plugin-commonjs": "^13.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^8.0.1",
+    "@rollup/plugin-typescript": "^4.1.2",
+    "babel-eslint": "^10.1.0",
+    "babel-plugin-source-map-support": "^2.1.2",
+    "eslint": "^7.2.0",
+    "eslint-plugin-babel": "^5.3.0",
+    "eslint-plugin-react": "^7.20.0",
+    "install-peers-cli": "^2.2.0",
+    "rollup": "^2.15.0",
+    "rollup-plugin-auto-external": "^2.0.0",
+    "rollup-plugin-babel": "^4.4.0",
+    "typescript": "^3.9.5"
+  },
+  "liveLink": {
+    "ignoreMasks": [
+      "dist",
+      "dist/index.js",
+      "dist/*",
+      "package.tgz"
+    ]
+  }
+}
