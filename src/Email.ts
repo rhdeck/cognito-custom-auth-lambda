@@ -1,28 +1,34 @@
 import makePasscode from "@raydeck/passcode";
-import { SNS } from "aws-sdk";
-const AWSSNS = (sns = new SNS()) => async (
-  PhoneNumber: string,
-  Message: string
-) => {
+import { SES } from "aws-sdk";
+import { SendEmailRequest } from "aws-sdk/clients/ses";
+const AWSSES = (ses = new SES()) => async (email: string, code: string) => {
   //@typescript candidate
-  const params = { Message, PhoneNumber };
+  if (!process.env.EMAIL_FROM)
+    throw "Cannot send without environment variable EMAIL_FROM";
+  const params: SendEmailRequest = {
+    Source: process.env.EMAIL_FROM,
+    Destination: { ToAddresses: [email] },
+    Message: {
+      Subject: { Data: "Authorization Code" },
+      Body: { Text: { Data: code } },
+    },
+  };
   try {
-    await sns.publish(params).promise();
+    await ses.sendEmail(params).promise();
   } catch (e) {
     console.warn("Could not send text message for phone", e);
   }
   return;
 };
-const Twilio = (token, sourcenumber) => async (phonenumber, message) => {};
-const key = "PHONE";
-const makePhone = (
-  sendText: (number: string, code: string) => Promise<void> = AWSSNS()
+const key = "EMAIL";
+const makeEmail = (
+  sendEmail: (number: string, code: string) => Promise<void> = AWSSES()
 ): Authenticator => ({
   key,
   create: async (event) => {
     const {
       request: {
-        userAttributes: { phone_number },
+        userAttributes: { email },
         session,
       },
     } = event;
@@ -35,9 +41,9 @@ const makePhone = (
       } catch (e) {}
     }
     if (!code) {
-      code = phone_number && (await makePasscode());
+      code = email && (await makePasscode());
       if (code) {
-        await sendText(phone_number, code);
+        await sendEmail(email, code);
       }
     }
     const response = {
@@ -64,5 +70,5 @@ const makePhone = (
     return { ...event, response: { answerCorrect: false } };
   },
 });
-export default makePhone;
-export { AWSSNS, Twilio };
+export default makeEmail;
+export { AWSSES };

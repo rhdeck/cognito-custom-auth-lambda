@@ -20,6 +20,7 @@ const getSigningKey = (kid: string): Promise<jwksClient.SigningKey> =>
   });
 const create = async (event) => {
   const response = {
+    challengeMetadata: JSON.stringify({ authType: key }),
     publicChallengeParameters: {
       authType: key,
       format: "jwt",
@@ -31,18 +32,18 @@ const create = async (event) => {
   return { ...event, response };
 };
 const verify = async (event) => {
-  let challengeResult = false;
+  let answerCorrect = false;
   const {
     request: {
-      challengeResponse,
+      challengeAnswer: idToken,
       userAttributes: { email: cognitoEmail },
     },
   } = event;
-  const decoded = decode(challengeResponse);
+  const decoded = decode(idToken);
   const { email, kid } = decoded;
   const key = await getSigningKey(kid);
-  const verified = await verifyToken(challengeResponse, key);
-  if (verified && email === cognitoEmail) challengeResult = true;
-  return { event, response: { challengeResult } };
+  const verified = await verifyToken(idToken, key);
+  if (verified && email === cognitoEmail) answerCorrect = true;
+  return { event, response: { answerCorrect } };
 };
-export default () => ({ key, create, verify });
+export default (): Authenticator => ({ key, create, verify });

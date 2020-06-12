@@ -1,10 +1,11 @@
 import { OAuth2Client } from "google-auth-library";
 const key = "GOOGLE";
-export default (clientId, clientIds) => ({
+export default (clientId: string, clientIds?: string[]): Authenticator => ({
   key,
   create: async (event) => {
     //What I need is for them to upload their key, so just tell them to do that
     const response = {
+      challengeMetadata: JSON.stringify({ authType: key }),
       publicChallengeParameters: {
         authType: key,
         format: "jwt",
@@ -18,7 +19,7 @@ export default (clientId, clientIds) => ({
   verify: async (event) => {
     const {
       request: {
-        challengeResponse: idToken,
+        challengeAnswer: idToken,
         userAttributes: { email },
       },
     } = event;
@@ -34,7 +35,7 @@ export default (clientId, clientIds) => ({
       if (payload.email === email) return { ...event, answerCorrect: true };
       else throw new Error("Email mismatch");
     } catch (e) {
-      return { ...event, answerCorrect: false };
+      return { ...event, response: { answerCorrect: false } };
     }
   },
 });

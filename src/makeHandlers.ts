@@ -2,105 +2,127 @@ import { v4 as uuid } from "uuid";
 const MAX_TRIES = 3;
 const getAuthType = (event) => {
   const {
-    request: { session, clientMetaData },
+    request: { session, clientMetadata },
   } = event;
   if (!session.length) {
     return "FIRST";
   }
   if (session.length === 1) {
-    //look at clientMetaData
-    return clientMetaData.authType;
+    //look at clientMetadata
+    return clientMetadata.authType;
   } else {
     let { authType } = JSON.parse([...session].pop().challengeMetadata);
     return authType;
   }
 };
-export default (Authenticators, { maxTries = MAX_TRIES }) => {
+export default (Authenticators: Authenticator[], { maxTries = MAX_TRIES }) => {
   //compile Authenticators
-  const authenticators = Authenticators.reduce(
+  const rawAuthenticators = Authenticators.reduce(
     (o, { key, create, verify }) => ({ ...o, [key]: { create, verify } }),
     {}
   );
-  const authenticatorKeys = Object.keys(authenticators);
+  const authenticatorKeys = Object.keys(rawAuthenticators);
   const FIRST = {
     create: async (event) => {
       const response = {
-        challengeMetadata: { authType: "FIRST" },
-        publicChallengeParameters: { authType: "challengeType", key: uuid() },
-        privateChallengeParameters: { authType: "challengeType", key: uuid() },
+        challengeMetadata: JSON.stringify({ authType: "FIRST" }),
+        publicChallengeParameters: { authType: "FIRST", key: uuid() },
+        privateChallengeParameters: { authType: "FIRST", key: uuid() },
       };
+      console.log("return response", response);
       return { ...event, response };
     },
     verify: async (event) => {
       //Look for a valid answer in the response and the
       const {
-        request: { challengeResponse, clientMetaData },
+        request: { challengeAnswer, clientMetadata },
       } = event;
+
       const response = (() => {
         if (
-          clientMetaData &&
-          clientMetaData.authType === challengeResponse &&
-          authenticatorKeys.includes(challengeResponse)
+          clientMetadata &&
+          clientMetadata.authType === challengeAnswer &&
+          authenticatorKeys.includes(challengeAnswer)
         ) {
           return {
-            challengeResult: true,
+            answerCorrect: true,
           };
-        } else return { challengeResult: false };
+        } else return { answerCorrect: false };
       })();
       return { ...event, response };
     },
   };
-  authenticators.FIRST = FIRST;
+  const authenticators = { ...rawAuthenticators, FIRST };
   const define = async (event) => {
-    const { session } = event;
+    console.log("Starting define with event", JSON.stringify(event, null, 2));
+    const {
+      request: { session },
+    } = event;
     //If this is the first time, just go to create challenge
-    if (!session.length)
+    if (!session.length) {
+      console.log("This is my first time");
       event.response = {
         issueTokens: false,
         failAuthentication: false,
         challengeName: "CUSTOM_CHALLENGE",
       };
-    //If this is a good result _after_ step 1, mark success
-    if (session.length > 1 && [...session].pop().challengeResult) {
+      //If this is a good result _after_ step 1, mark success
+    } else if (session.length > 1 && [...session].pop().challengeResult) {
+      console.log("Congratuations, everyone");
       event.response = { issueTokens: true, failAuthentication: false };
     }
     //If this is a bad result _at_ step 1, fail
-    if (session.length === 1 && ![...session].pop().challengeResult) {
+    else if (session.length === 1 && ![...session].pop().challengeResult) {
       event.response = { issueTokens: false, failAuthentication: true };
     }
     //Too many login attempts - force out
     else if (session.length > MAX_TRIES)
       event.response = { issueTokens: false, failAuthentication: true };
     //Otherwise, this is an ordinary "go to next step"
-    else
+    else {
+      console.log("last possible result");
       event.response = {
         issueTokens: false,
         failAuthentication: false,
         challengeName: "CUSTOM_CHALLENGE",
       };
+    }
     return event;
   };
   const create = async (event) => {
+    console.log("starting create with event", JSON.stringify(event, null, 2));
     //Is this my first auth challenge? If so, just ask for which path to go down
     const authType = getAuthType(event);
+    console.log("got an authtype of", authType);
     if (
       authenticators[authType] &&
       typeof authenticators[authType].create === "function"
-    )
-      return authenticators[authType].create(event);
+    ) {
+      console.log("Launching create with authtype", authType);
+      const out = await authenticators[authType].create(event);
+      console.log("Ending with event", JSON.stringify(out, null, 2));
+      return out;
+    }
+    console.log("ruh roh", authType);
     throw new Error("Cannot authenticate");
   };
   const verify = async (event) => {
     //THis is driven by my challenge metadata
     const {
-      request: { challengeMetaData },
+      request: {
+        privateChallengeParameters: { authType },
+      },
     } = event;
-    const { authType } = JSON.parse(challengeMetaData);
+    console.log("Starting base verify with event", event);
     if (
       authenticators[authType] &&
       typeof authenticators[authType].verify === "function"
-    )
-      return authenticators[authType].verify(event);
+    ) {
+      console.log("Launching verify for ", authType);
+      const out = await authenticators[authType].verify(event);
+      console.log("Ending base verify with event", out);
+      return out;
+    }
     throw new Error("Cannot authenticate");
   };
   return { define, create, verify };
