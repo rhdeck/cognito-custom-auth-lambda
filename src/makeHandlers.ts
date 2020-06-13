@@ -22,7 +22,8 @@ export default (Authenticators: Authenticator[], { maxTries = MAX_TRIES }) => {
     {}
   );
   const authenticatorKeys = Object.keys(rawAuthenticators);
-  const FIRST = {
+  const FIRST: Authenticator = {
+    key: "FIRST",
     create: async (event) => {
       const response = {
         challengeMetadata: JSON.stringify({ authType: "FIRST" }),
@@ -87,6 +88,10 @@ export default (Authenticators: Authenticator[], { maxTries = MAX_TRIES }) => {
         challengeName: "CUSTOM_CHALLENGE",
       };
     }
+    console.log(
+      "Ending define with event full event",
+      JSON.stringify(event, null, 2)
+    );
     return event;
   };
   const create = async (event) => {

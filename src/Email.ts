@@ -32,11 +32,11 @@ const makeEmail = (
         session,
       },
     } = event;
-    const { challengeMetaData } = [...session].pop();
+    const { challengeMetadata } = [...session].pop();
     let code;
-    if (challengeMetaData) {
+    if (challengeMetadata) {
       try {
-        const { code: oldCode } = JSON.parse(challengeMetaData);
+        const { code: oldCode } = JSON.parse(challengeMetadata);
         if (oldCode) code = oldCode;
       } catch (e) {}
     }
@@ -47,7 +47,7 @@ const makeEmail = (
       }
     }
     const response = {
-      challengeMetadata: JSON.stringify({ code }),
+      challengeMetadata: JSON.stringify({ code, authType: key }),
       publicChallengeParameters: {
         authType: key,
       },
