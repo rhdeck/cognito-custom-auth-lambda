@@ -22,11 +22,12 @@ const create = async (event) => {
   const response = {
     challengeMetadata: JSON.stringify({ authType: key }),
     publicChallengeParameters: {
-      authType: key,
       format: "jwt",
+      authType: key,
     },
     privateChallengeParameters: {
       format: "jwt",
+      authType: key,
     },
   };
   return { ...event, response };
@@ -36,14 +37,20 @@ const verify = async (event) => {
   const {
     request: {
       challengeAnswer: idToken,
-      userAttributes: { email: cognitoEmail },
+      userAttributes: {
+        email: cognitoEmail,
+        preferred_username: cognitoUsername,
+      },
     },
   } = event;
   const decoded = decode(idToken);
-  const { email, kid } = decoded;
+  const { email, sub } = decoded;
+  const decodedHeader = decode(idToken, { header: true });
+  const { kid } = decodedHeader;
   const key = await getSigningKey(kid);
-  const verified = await verifyToken(idToken, key);
-  if (verified && email === cognitoEmail) answerCorrect = true;
-  return { event, response: { answerCorrect } };
+  const verified = await verifyToken(idToken, key.getPublicKey());
+  if (verified && (email === cognitoEmail || sub === cognitoUsername))
+    answerCorrect = true;
+  return { ...event, response: { answerCorrect } };
 };
 export default (): Authenticator => ({ key, create, verify });
