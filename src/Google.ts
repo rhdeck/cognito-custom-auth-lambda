@@ -11,6 +11,7 @@ export default (clientId: string, clientIds?: string[]): Authenticator => ({
         format: "jwt",
       },
       privateChallengeParameters: {
+        authType: key,
         format: "jwt",
       },
     };
@@ -20,7 +21,7 @@ export default (clientId: string, clientIds?: string[]): Authenticator => ({
     const {
       request: {
         challengeAnswer: idToken,
-        userAttributes: { email },
+        userAttributes: { email, preferred_username },
       },
     } = event;
     const client = new OAuth2Client(process.env.googleClientId);
@@ -32,7 +33,8 @@ export default (clientId: string, clientIds?: string[]): Authenticator => ({
       const { payload } = ticket.getAttributes();
       if (!payload) throw new Error("no payload returned");
       //check email address
-      if (payload.email === email) return { ...event, answerCorrect: true };
+      if (payload.email === email || payload.sub === preferred_username)
+        return { ...event, response: { answerCorrect: true } };
       else throw new Error("Email mismatch");
     } catch (e) {
       return { ...event, response: { answerCorrect: false } };
