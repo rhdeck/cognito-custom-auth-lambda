@@ -1,5 +1,6 @@
 import makePasscode from "@raydeck/passcode";
-const makeContactBase = (key: string, 
+const makeContactBase = (
+  key: string,
   sendContact: (request, code) => Promise<void>
 ): Authenticator => ({
   key,
@@ -19,7 +20,7 @@ const makeContactBase = (key: string,
       } catch (e) {}
     }
     if (!code) {
-      code = & (await makePasscode());
+      code = await makePasscode();
       if (code) await sendContact(code, event.request);
     }
     const response = {
