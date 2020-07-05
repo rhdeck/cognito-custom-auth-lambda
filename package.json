@@ -8,6 +8,10 @@
     "build": "rollup -c -m",
     "prepare": "install-peers"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhdeck/cognito-custom-auth-lambda.git"
+  },
   "keywords": [],
   "types": "./dist/types",
   "author": "Ray Deck",

@@ -1,6 +1,6 @@
-import makePasscode from "@raydeck/passcode";
 import { SES } from "aws-sdk";
 import { SendEmailRequest } from "aws-sdk/clients/ses";
+import makeContactBase from "./ContactBase";
 const AWSSES = (ses = new SES()) => async (email: string, code: string) => {
   //@typescript candidate
   if (!process.env.EMAIL_FROM)
@@ -23,52 +23,9 @@ const AWSSES = (ses = new SES()) => async (email: string, code: string) => {
 const key = "EMAIL";
 const makeEmail = (
   sendEmail: (number: string, code: string) => Promise<void> = AWSSES()
-): Authenticator => ({
-  key,
-  create: async (event) => {
-    const {
-      request: {
-        userAttributes: { email },
-        session,
-      },
-    } = event;
-    const { challengeMetadata } = [...session].pop();
-    let code;
-    if (challengeMetadata) {
-      try {
-        const { code: oldCode } = JSON.parse(challengeMetadata);
-        if (oldCode) code = oldCode;
-      } catch (e) {}
-    }
-    if (!code) {
-      code = email && (await makePasscode());
-      if (code) {
-        await sendEmail(email, code);
-      }
-    }
-    const response = {
-      challengeMetadata: JSON.stringify({ code, authType: key }),
-      publicChallengeParameters: {
-        authType: key,
-      },
-      privateChallengeParameters: {
-        code,
-        authType: key,
-      },
-    };
-    return { ...event, response };
-  },
-  verify: async (event) => {
-    const {
-      request: {
-        challengeAnswer,
-        privateChallengeParameters: { code },
-      },
-    } = event;
-    if (code && challengeAnswer === code)
-      return { ...event, response: { answerCorrect: true } };
-    return { ...event, response: { answerCorrect: false } };
-  },
-});
+) =>
+  makeContactBase(key, async ({ userAttributes: { email } }, code) => {
+    if (code && email) await sendEmail(email, code);
+  });
 export default makeEmail;
 export { AWSSES };
